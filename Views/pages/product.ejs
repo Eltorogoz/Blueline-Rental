@@ -1,0 +1,78 @@
+<%- include('../base', { body: `
+    <div class="container my-5">
+      <h2 class="text-center text-primary mb-4">Our Vehicles</h2>
+  
+      <div class="row g-4">
+        ${products.map(car => `
+          <div class="col-12 col-sm-6 col-lg-4">
+            <div class="card h-100 shadow-sm">
+              <img src="${car.image_url}" class="card-img-top" alt="${car.name}" loading="lazy">
+              <div class="card-body d-flex flex-column">
+                <h5 class="card-title text-primary">${car.brand} — ${car.name}</h5>
+                <p class="card-text text-muted mb-3">${car.category} · ${car.description || ''}</p>
+  
+                <button
+                  class="btn btn-outline-primary w-100 mt-auto details-btn"
+                  data-id="${car.id}"
+                  data-title="${car.brand} — ${car.name}"
+                  data-category="${car.category || ''}"
+                  data-bs-toggle="modal"
+                  data-bs-target="#carModal">
+                  Show Details
+                </button>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  
+    <!-- Car Details Modal -->
+    <div class="modal fade" id="carModal" tabindex="-1" aria-labelledby="carModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="carModalLabel">Vehicle Details</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p><strong>Category:</strong> <span id="modal-category"></span></p>
+            <p><strong>Price per day:</strong> $<span id="modal-price"></span></p>
+            <p><strong>Availability:</strong> <span id="modal-availability"></span></p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  ` }) %>
+  
+  <script>
+    // Fill modal using API (no embedded JSON needed)
+    document.addEventListener('DOMContentLoaded', () => {
+      document.body.addEventListener('click', async (e) => {
+        const btn = e.target.closest('.details-btn');
+        if (!btn) return;
+  
+        const id = btn.dataset.id;
+  
+        // optimistic fill (title/category) from data attributes
+        document.getElementById('carModalLabel').textContent = btn.dataset.title || 'Vehicle Details';
+        document.getElementById('modal-category').textContent = btn.dataset.category || '';
+  
+        try {
+          const res = await fetch('/api/products/' + id);
+          if (!res.ok) throw new Error('network');
+          const car = await res.json();
+  
+          document.getElementById('modal-price').textContent = Number(car.daily_rate).toFixed(2);
+          document.getElementById('modal-availability').textContent = car.available;
+        } catch {
+          document.getElementById('modal-price').textContent = '—';
+          document.getElementById('modal-availability').textContent = '—';
+        }
+      });
+    });
+  </script>
+  
